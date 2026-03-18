@@ -103,7 +103,7 @@ const recentStyles = StyleSheet.create({
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const { setQueue, currentIndex, queue, isLoading: playerLoading, addToQueue } = usePlayerStore();
+  const { setQueue, currentIndex, queue, isLoading: playerLoading } = usePlayerStore();
 
   const [activeTab, setActiveTab] = useState<Tab>('Suggested');
   const [searchQuery, setSearchQuery] = useState('');
@@ -287,6 +287,17 @@ export default function HomeScreen() {
     navigation.navigate('Player');
   }
 
+  // ── Toggle queue — add if not in queue, remove if already in ──
+  function toggleQueue(song: Song) {
+    const { queue, addToQueue, removeFromQueue } = usePlayerStore.getState();
+    const existingIndex = queue.findIndex(s => s.id === song.id);
+    if (existingIndex >= 0) {
+      removeFromQueue(existingIndex);
+    } else {
+      addToQueue(song);
+    }
+  }
+
   function getCurrentSongs(): Song[] {
     if (isSearchMode) return searchSongsState.data;
     return activeTab === 'Songs' ? songs.data : suggested.data;
@@ -350,7 +361,6 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* Fixed Header — outside scroll, always visible */}
       <View style={styles.fixedHeader}>
         <View style={styles.header}>
           <View style={styles.logoRow}>
@@ -397,7 +407,6 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* Songs / Suggested */}
       {(activeTab === 'Suggested' || activeTab === 'Songs') && (
         <FlatList
           data={displaySongs}
@@ -416,7 +425,7 @@ export default function HomeScreen() {
             <SongCard
               song={item}
               onPress={() => playSong(displaySongs, index)}
-              onAddToQueue={() => addToQueue(item)}
+              onAddToQueue={() => toggleQueue(item)}
               isActive={currentSong?.id === item.id}
               isLoading={currentSong?.id === item.id && playerLoading}
             />
@@ -431,7 +440,6 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* Artists */}
       {activeTab === 'Artists' && (
         <FlatList
           data={displayArtists}
@@ -447,7 +455,6 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* Albums */}
       {activeTab === 'Albums' && (
         <FlatList
           data={displayAlbums}
@@ -463,7 +470,6 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* Detail Modal */}
       <Modal visible={detailModal} animationType="slide" onRequestClose={() => setDetailModal(false)}>
         <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
           <View style={styles.modalHeader}>
@@ -510,7 +516,7 @@ export default function HomeScreen() {
                 <SongCard
                   song={item}
                   onPress={() => { playSong(detailSongs, index); setDetailModal(false); }}
-                  onAddToQueue={() => addToQueue(item)}
+                  onAddToQueue={() => toggleQueue(item)}
                   showIndex={index}
                   isActive={currentSong?.id === item.id}
                   isLoading={currentSong?.id === item.id && playerLoading}
@@ -528,39 +534,21 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-  },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   loadingText: { color: Colors.textSecondary, marginTop: 12, fontSize: 14 },
-  fixedHeader: {
-    backgroundColor: Colors.background,
-    zIndex: 10,
-    paddingBottom: 4,
-  },
+  fixedHeader: { backgroundColor: Colors.background, zIndex: 10, paddingBottom: 4 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.sm,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.sm,
   },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   appName: { fontSize: 22, fontWeight: '700', color: Colors.text },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    marginHorizontal: Spacing.md,
-    marginBottom: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: Colors.surface, marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm, borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md, paddingVertical: 10,
+    gap: 10, borderWidth: 1, borderColor: Colors.border,
   },
   searchInput: { flex: 1, fontSize: 14, color: Colors.text },
   tabs: { marginBottom: 4 },
@@ -569,27 +557,17 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomWidth: 2, borderBottomColor: Colors.primary },
   tabText: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
   tabTextActive: { color: Colors.primary, fontWeight: '700' },
-  countRow: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    marginBottom: 4,
-  },
+  countRow: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, marginBottom: 4 },
   countText: { color: Colors.textSecondary, fontSize: 12 },
   listContent: { paddingBottom: 20 },
   artistRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.md,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: Spacing.md,
   },
   artistImage: { width: 52, height: 52, borderRadius: 26, backgroundColor: Colors.surface },
   albumRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.md,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: Spacing.md,
   },
   albumImage: { width: 52, height: 52, borderRadius: BorderRadius.sm, backgroundColor: Colors.surface },
   placeholderBox: { justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.surfaceLight },
@@ -597,34 +575,21 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 12, color: Colors.textSecondary },
   modalContainer: { flex: 1, backgroundColor: Colors.background },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
   modalBack: { width: 40 },
   modalTitle: { flex: 1, fontSize: 17, fontWeight: '700', color: Colors.text, textAlign: 'center' },
   modalCover: {
-    width: 150,
-    height: 150,
-    borderRadius: BorderRadius.lg,
-    alignSelf: 'center',
-    marginVertical: Spacing.md,
-    backgroundColor: Colors.surface,
+    width: 150, height: 150, borderRadius: BorderRadius.lg,
+    alignSelf: 'center', marginVertical: Spacing.md, backgroundColor: Colors.surface,
   },
   playAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    marginHorizontal: Spacing.lg,
-    borderRadius: BorderRadius.full,
-    paddingVertical: 12,
-    gap: 8,
-    marginBottom: Spacing.md,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primary, marginHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.full, paddingVertical: 12,
+    gap: 8, marginBottom: Spacing.md,
   },
   playAllText: { color: Colors.background, fontWeight: '700', fontSize: 15 },
   modalLoading: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },

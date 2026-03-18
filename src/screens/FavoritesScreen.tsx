@@ -1,14 +1,26 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { usePlayerStore } from '../store/playerStore';
 import SongCard from '../components/SongCard';
 import { Colors, Spacing } from '../utils/theme';
+import { Song } from '../types';
+
+function toggleQueue(song: Song) {
+  const { queue, addToQueue, removeFromQueue } = usePlayerStore.getState();
+  const existingIndex = queue.findIndex(s => s.id === song.id);
+  if (existingIndex >= 0) {
+    removeFromQueue(existingIndex);
+  } else {
+    addToQueue(song);
+  }
+}
 
 export default function FavoritesScreen() {
   const navigation = useNavigation<any>();
-  const { favorites, setQueue, currentIndex, queue, addToQueue } = usePlayerStore();
+  const { favorites, setQueue, currentIndex, queue } = usePlayerStore();
   const currentSong = queue[currentIndex];
 
   function playSong(index: number) {
@@ -17,7 +29,8 @@ export default function FavoritesScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
       <View style={styles.header}>
         <Text style={styles.title}>Favorites</Text>
         <Text style={styles.count}>{favorites.length} songs</Text>
@@ -37,14 +50,14 @@ export default function FavoritesScreen() {
             <SongCard
               song={item}
               onPress={() => playSong(index)}
-              onAddToQueue={() => addToQueue(item)}
+              onAddToQueue={() => toggleQueue(item)}
               isActive={currentSong?.id === item.id}
             />
           )}
           contentContainerStyle={{ paddingBottom: 20 }}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -52,7 +65,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: {
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.xl,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.md,
   },
   title: { fontSize: 26, fontWeight: '700', color: Colors.text },
