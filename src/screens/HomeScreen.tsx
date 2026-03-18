@@ -2,8 +2,9 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity,
   Image, ScrollView, ActivityIndicator, RefreshControl, StatusBar,
-  Modal, SafeAreaView,
+  Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Song, Artist, Album } from '../types';
@@ -28,7 +29,6 @@ function initPaged<T>(): PagedState<T> {
   return { data: [], page: 1, hasMore: true };
 }
 
-// ── Recently Played horizontal section ──
 function RecentlyPlayedSection() {
   const { recentlyPlayed, setQueue } = usePlayerStore();
   const navigation = useNavigation<any>();
@@ -75,9 +75,7 @@ function RecentlyPlayedSection() {
 }
 
 const recentStyles = StyleSheet.create({
-  container: {
-    marginBottom: Spacing.md,
-  },
+  container: { marginBottom: Spacing.md },
   title: {
     fontSize: 16,
     fontWeight: '700',
@@ -85,16 +83,11 @@ const recentStyles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
   },
-  list: {
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.md,
-  },
-  item: {
-    width: 110,
-  },
+  list: { paddingHorizontal: Spacing.md, gap: Spacing.md },
+  item: { width: 100 },
   image: {
-    width: 110,
-    height: 110,
+    width: 100,
+    height: 100,
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     marginBottom: Spacing.xs,
@@ -104,16 +97,8 @@ const recentStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surfaceLight,
   },
-  name: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 2,
-  },
-  artist: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-  },
+  name: { fontSize: 11, fontWeight: '600', color: Colors.text, marginBottom: 2 },
+  artist: { fontSize: 10, color: Colors.textSecondary },
 });
 
 export default function HomeScreen() {
@@ -136,7 +121,6 @@ export default function HomeScreen() {
   const [searchArtistsState, setSearchArtistsState] = useState<PagedState<Artist>>(initPaged());
   const [searchAlbumsState, setSearchAlbumsState] = useState<PagedState<Album>>(initPaged());
 
-  // Detail modal state
   const [detailModal, setDetailModal] = useState(false);
   const [detailTitle, setDetailTitle] = useState('');
   const [detailImage, setDetailImage] = useState('');
@@ -314,10 +298,13 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -360,17 +347,18 @@ export default function HomeScreen() {
   const displayAlbums = isSearchMode ? searchAlbumsState.data : albums.data;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* Fixed Header */}
+      {/* Fixed Header — outside scroll, always visible */}
       <View style={styles.fixedHeader}>
         <View style={styles.header}>
           <View style={styles.logoRow}>
-            <Ionicons name="musical-notes" size={28} color={Colors.primary} />
-            <Text style={styles.appName}>Nikku</Text>
+            <Ionicons name="musical-notes" size={26} color={Colors.primary} />
+            <Text style={styles.appName}>Mume</Text>
           </View>
         </View>
+
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={18} color={Colors.textSecondary} />
           <TextInput
@@ -390,7 +378,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabs} contentContainerStyle={styles.tabsContent}>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabs}
+          contentContainerStyle={styles.tabsContent}
+        >
           {(['Suggested', 'Songs', 'Artists', 'Albums'] as Tab[]).map(tab => (
             <TouchableOpacity
               key={tab}
@@ -403,16 +397,14 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
+      {/* Songs / Suggested */}
       {(activeTab === 'Suggested' || activeTab === 'Songs') && (
         <FlatList
           data={displaySongs}
           keyExtractor={(item, i) => `${item.id}-${i}`}
           ListHeaderComponent={
             <View>
-              {/* Recently Played — only on Suggested tab when not searching */}
-              {activeTab === 'Suggested' && !isSearchMode && (
-                <RecentlyPlayedSection />
-              )}
+              {activeTab === 'Suggested' && !isSearchMode && <RecentlyPlayedSection />}
               <View style={styles.countRow}>
                 <Text style={styles.countText}>
                   {isSearchMode ? `${displaySongs.length} results` : `${displaySongs.length} songs`}
@@ -439,6 +431,7 @@ export default function HomeScreen() {
         />
       )}
 
+      {/* Artists */}
       {activeTab === 'Artists' && (
         <FlatList
           data={displayArtists}
@@ -454,6 +447,7 @@ export default function HomeScreen() {
         />
       )}
 
+      {/* Albums */}
       {activeTab === 'Albums' && (
         <FlatList
           data={displayAlbums}
@@ -469,9 +463,9 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* Detail Modal (Artist / Album songs) */}
+      {/* Detail Modal */}
       <Modal visible={detailModal} animationType="slide" onRequestClose={() => setDetailModal(false)}>
-        <SafeAreaView style={styles.modalContainer}>
+        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setDetailModal(false)} style={styles.modalBack}>
               <Ionicons name="chevron-down" size={28} color={Colors.text} />
@@ -528,46 +522,74 @@ export default function HomeScreen() {
           )}
         </SafeAreaView>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+  },
   loadingText: { color: Colors.textSecondary, marginTop: 12, fontSize: 14 },
-  fixedHeader: { backgroundColor: Colors.background, zIndex: 10 },
+  fixedHeader: {
+    backgroundColor: Colors.background,
+    zIndex: 10,
+    paddingBottom: 4,
+  },
   header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: Spacing.md, paddingTop: Spacing.lg, paddingBottom: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.sm,
   },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   appName: { fontSize: 22, fontWeight: '700', color: Colors.text },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.surface, marginHorizontal: Spacing.md,
-    marginBottom: Spacing.sm, borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.md, paddingVertical: 10,
-    gap: 10, borderWidth: 1, borderColor: Colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   searchInput: { flex: 1, fontSize: 14, color: Colors.text },
-  tabs: { marginBottom: Spacing.sm },
+  tabs: { marginBottom: 4 },
   tabsContent: { paddingHorizontal: Spacing.md, gap: Spacing.sm },
   tab: { paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full },
   tabActive: { borderBottomWidth: 2, borderBottomColor: Colors.primary },
   tabText: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
   tabTextActive: { color: Colors.primary, fontWeight: '700' },
-  countRow: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, marginBottom: Spacing.sm },
-  countText: { color: Colors.textSecondary, fontSize: 13 },
+  countRow: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    marginBottom: 4,
+  },
+  countText: { color: Colors.textSecondary, fontSize: 12 },
   listContent: { paddingBottom: 20 },
   artistRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.md,
   },
   artistImage: { width: 52, height: 52, borderRadius: 26, backgroundColor: Colors.surface },
   albumRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.md,
   },
   albumImage: { width: 52, height: 52, borderRadius: BorderRadius.sm, backgroundColor: Colors.surface },
   placeholderBox: { justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.surfaceLight },
@@ -575,22 +597,34 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 12, color: Colors.textSecondary },
   modalContainer: { flex: 1, backgroundColor: Colors.background },
   modalHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   modalBack: { width: 40 },
   modalTitle: { flex: 1, fontSize: 17, fontWeight: '700', color: Colors.text, textAlign: 'center' },
   modalCover: {
-    width: 160, height: 160, borderRadius: BorderRadius.lg,
-    alignSelf: 'center', marginVertical: Spacing.lg,
+    width: 150,
+    height: 150,
+    borderRadius: BorderRadius.lg,
+    alignSelf: 'center',
+    marginVertical: Spacing.md,
     backgroundColor: Colors.surface,
   },
   playAllBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.primary, marginHorizontal: Spacing.lg,
-    borderRadius: BorderRadius.full, paddingVertical: 12,
-    gap: 8, marginBottom: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    marginHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.full,
+    paddingVertical: 12,
+    gap: 8,
+    marginBottom: Spacing.md,
   },
   playAllText: { color: Colors.background, fontWeight: '700', fontSize: 15 },
   modalLoading: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },

@@ -10,6 +10,7 @@ import PlayerScreen from '../screens/PlayerScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import PlaylistsScreen from '../screens/PlaylistsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import DownloadsScreen from '../screens/DownloadsScreen';
 import MiniPlayer from '../components/MiniPlayer';
 import { Colors, BorderRadius } from '../utils/theme';
 import { usePlayerStore } from '../store/playerStore';
@@ -18,7 +19,6 @@ import { useAudioPlayer } from '../hooks/useAudioPlayer';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Sits inside NavigationContainer to drive audio engine
 function AudioController() {
   useAudioPlayer();
   return null;
@@ -42,6 +42,7 @@ function TabBarWithMiniPlayer({ state, descriptors, navigation }: any) {
               case 'Home': return focused ? 'home' : 'home-outline';
               case 'Favorites': return focused ? 'heart' : 'heart-outline';
               case 'Playlists': return focused ? 'list' : 'list-outline';
+              case 'Downloads': return focused ? 'download' : 'download-outline';
               case 'Settings': return focused ? 'settings' : 'settings-outline';
               default: return 'ellipse';
             }
@@ -74,6 +75,7 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
       <Tab.Screen name="Playlists" component={PlaylistsScreen} />
+      <Tab.Screen name="Downloads" component={DownloadsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
