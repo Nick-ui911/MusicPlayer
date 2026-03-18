@@ -20,6 +20,7 @@ interface Props {
 
 export default function SongCard({ song, onPress, onAddToQueue, showIndex, isActive, isLoading }: Props) {
   const { toggleFavorite, isFavorite } = usePlayerStore();
+  const isInQueue = usePlayerStore(state => state.queue.some(q => q.id === song.id));
   const imageUri = getBestImage(song.image);
   const artist = decodeHtml(getArtistNames(song));
   const dur = formatDuration(song.duration);
@@ -75,7 +76,11 @@ export default function SongCard({ song, onPress, onAddToQueue, showIndex, isAct
           style={styles.actionBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="add-circle-outline" size={22} color={Colors.textSecondary} />
+          <Ionicons
+            name={isInQueue ? 'checkmark-circle' : 'add-circle-outline'}
+            size={22}
+            color={isInQueue ? Colors.primary : Colors.textSecondary}
+          />
         </TouchableOpacity>
       )}
     </TouchableOpacity>

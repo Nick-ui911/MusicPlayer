@@ -109,13 +109,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
-  tabBar: {
-    flexDirection: 'row',
-    paddingBottom: 20,
-    paddingTop: 8,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.background,
-  },
+tabBar: {
+  flexDirection: 'row',
+  paddingTop: 8,
+  paddingHorizontal: 16,
+  paddingBottom: 34,
+  backgroundColor: Colors.background,
+},
   tabItem: {
     flex: 1,
     alignItems: 'center',
