@@ -355,7 +355,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.logoRow}>
             <Ionicons name="musical-notes" size={26} color={Colors.primary} />
-            <Text style={styles.appName}>Melody</Text>
+            <Text style={styles.appName}>Melodi</Text>
           </View>
         </View>
 
