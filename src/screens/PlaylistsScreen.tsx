@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
-  StatusBar, ActivityIndicator, Alert,
+  StatusBar, ActivityIndicator, Alert, FlatList,
 } from 'react-native';
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-} from 'react-native-draggable-flatlist';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { usePlayerStore } from '../store/playerStore';
@@ -33,11 +29,6 @@ export default function PlaylistsScreen() {
     navigation.navigate('Player');
   }
 
-  function handleDragEnd({ data }: { data: Song[] }) {
-    const newIndex = currentSong ? data.findIndex(s => s.id === currentSong.id) : 0;
-    usePlayerStore.setState({ queue: data, currentIndex: newIndex });
-  }
-
   async function handleDownload(song: Song) {
     if (isDownloaded(song.id) || downloading[song.id]) return;
     const url = getBestAudio(song.downloadUrl);
@@ -60,8 +51,7 @@ export default function PlaylistsScreen() {
     setDownloading(prev => ({ ...prev, [song.id]: false }));
   }
 
-  const renderItem = ({ item, drag, isActive, getIndex }: RenderItemParams<Song>) => {
-    const index = getIndex() ?? 0;
+  const renderItem = ({ item, index }: { item: Song; index: number }) => {
     const img = getBestImage(item.image);
     const artist = decodeHtml(getArtistNames(item));
     const isCurrentSong = currentSong?.id === item.id;
@@ -69,73 +59,72 @@ export default function PlaylistsScreen() {
     const isDownloading = downloading[item.id] ?? false;
 
     return (
-      <ScaleDecorator>
-        <TouchableOpacity
-          style={[
-            styles.songRow,
-            isActive && styles.songRowDragging,
-            isCurrentSong && styles.songRowActive,
-          ]}
-          onPress={() => handlePlay(index)}
-          activeOpacity={0.7}
-        >
-          <TouchableOpacity onLongPress={drag} delayLongPress={150} style={styles.dragHandle}>
-            <Ionicons name="reorder-three" size={24} color={Colors.textMuted} />
-          </TouchableOpacity>
-
-          <View style={styles.indexWrap}>
-            {isCurrentSong ? (
-              <Ionicons name="musical-notes" size={16} color={Colors.primary} />
-            ) : (
-              <Text style={styles.indexText}>{index + 1}</Text>
-            )}
-          </View>
-
-          {img ? (
-            <Image source={{ uri: img }} style={styles.artwork} />
+      <TouchableOpacity
+        style={[
+          styles.songRow,
+          isCurrentSong && styles.songRowActive,
+        ]}
+        onPress={() => handlePlay(index)}
+        activeOpacity={0.7}
+      >
+        {/* Index / playing indicator */}
+        <View style={styles.indexWrap}>
+          {isCurrentSong ? (
+            <Ionicons name="musical-notes" size={16} color={Colors.primary} />
           ) : (
-            <View style={[styles.artwork, styles.artworkPlaceholder]}>
-              <Ionicons name="musical-note" size={18} color={Colors.textMuted} />
-            </View>
+            <Text style={styles.indexText}>{index + 1}</Text>
           )}
+        </View>
 
-          <View style={styles.info}>
-            <Text style={[styles.songName, isCurrentSong && styles.songNameActive]} numberOfLines={1}>
-              {decodeHtml(item.name)}
-            </Text>
-            <Text style={styles.artistName} numberOfLines={1}>
-              {artist} • {formatDuration(item.duration)}
-            </Text>
+        {/* Artwork */}
+        {img ? (
+          <Image source={{ uri: img }} style={styles.artwork} />
+        ) : (
+          <View style={[styles.artwork, styles.artworkPlaceholder]}>
+            <Ionicons name="musical-note" size={18} color={Colors.textMuted} />
           </View>
+        )}
 
-          {/* Download button */}
-          <TouchableOpacity
-            onPress={() => handleDownload(item)}
-            disabled={downloaded || isDownloading}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.actionBtn}
+        {/* Info */}
+        <View style={styles.info}>
+          <Text
+            style={[styles.songName, isCurrentSong && styles.songNameActive]}
+            numberOfLines={1}
           >
-            {isDownloading ? (
-              <ActivityIndicator size="small" color={Colors.primary} />
-            ) : (
-              <Ionicons
-                name={downloaded ? 'checkmark-circle' : 'download-outline'}
-                size={20}
-                color={downloaded ? Colors.success : Colors.textSecondary}
-              />
-            )}
-          </TouchableOpacity>
+            {decodeHtml(item.name)}
+          </Text>
+          <Text style={styles.artistName} numberOfLines={1}>
+            {artist} • {formatDuration(item.duration)}
+          </Text>
+        </View>
 
-          {/* Remove button */}
-          <TouchableOpacity
-            onPress={() => removeFromQueue(index)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.actionBtn}
-          >
-            <Ionicons name="close" size={18} color={Colors.textMuted} />
-          </TouchableOpacity>
+        {/* Download button */}
+        <TouchableOpacity
+          onPress={() => handleDownload(item)}
+          disabled={downloaded || isDownloading}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.actionBtn}
+        >
+          {isDownloading ? (
+            <ActivityIndicator size="small" color={Colors.primary} />
+          ) : (
+            <Ionicons
+              name={downloaded ? 'checkmark-circle' : 'download-outline'}
+              size={20}
+              color={downloaded ? Colors.success : Colors.textSecondary}
+            />
+          )}
         </TouchableOpacity>
-      </ScaleDecorator>
+
+        {/* Remove button */}
+        <TouchableOpacity
+          onPress={() => removeFromQueue(index)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.actionBtn}
+        >
+          <Ionicons name="close" size={18} color={Colors.textMuted} />
+        </TouchableOpacity>
+      </TouchableOpacity>
     );
   };
 
@@ -176,21 +165,13 @@ export default function PlaylistsScreen() {
           </Text>
         </View>
       ) : (
-        <>
-          <View style={styles.hint}>
-            <Ionicons name="information-circle-outline" size={14} color={Colors.textMuted} />
-            <Text style={styles.hintText}>Long press ≡ to reorder • Tap × to remove</Text>
-          </View>
-          <DraggableFlatList
-            data={queue}
-            keyExtractor={(item, i) => `${item.id}-${i}`}
-            renderItem={renderItem}
-            onDragEnd={handleDragEnd}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            activationDistance={10}
-          />
-        </>
+        <FlatList
+          data={queue}
+          keyExtractor={(item, i) => `${item.id}-${i}`}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
       )}
     </View>
   );
@@ -224,14 +205,6 @@ const styles = StyleSheet.create({
   nowPlayingLeft: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   nowPlayingLabel: { fontSize: 10, fontWeight: '700', color: Colors.primary, letterSpacing: 1 },
   nowPlayingSong: { flex: 1, fontSize: 13, fontWeight: '600', color: Colors.text },
-  hint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.sm,
-  },
-  hintText: { fontSize: 11, color: Colors.textMuted },
   listContent: { paddingBottom: 40 },
   songRow: {
     flexDirection: 'row',
@@ -241,17 +214,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     gap: 8,
   },
-  songRowDragging: {
-    backgroundColor: Colors.surfaceLight,
-    borderRadius: BorderRadius.md,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
   songRowActive: { backgroundColor: 'rgba(255,107,53,0.06)' },
-  dragHandle: { padding: 4 },
   indexWrap: { width: 20, alignItems: 'center' },
   indexText: { fontSize: 12, color: Colors.textMuted },
   artwork: {
